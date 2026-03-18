@@ -96,8 +96,9 @@ cd Closy-App
 
 ### 2. 환경변수 설정
 
+**백엔드**
+
 ```bash
-# backend/.env.example을 복사해서 .env 생성
 cp backend/.env.example backend/.env
 ```
 
@@ -105,8 +106,26 @@ cp backend/.env.example backend/.env
 
 ```
 GEMINI_API_KEY=your_gemini_api_key_here
-SECRET_KEY=your_secret_key_here
+SECRET_KEY=랜덤_문자열_입력
 ```
+
+**프론트엔드**
+
+```bash
+cp frontend/.env.example frontend/.env
+```
+
+`frontend/.env` 열어서 본인 컴퓨터의 로컬 IP 입력:
+
+```
+EXPO_PUBLIC_API_URL=http://본인_IP:8000
+```
+
+> **IP 확인 방법 (Windows):** cmd에서 `ipconfig` 실행 → `무선 LAN 어댑터 Wi-Fi`의 IPv4 주소
+>
+> **IP 확인 방법 (Mac/Linux):** `ifconfig | grep inet` 또는 `ip addr`
+>
+> Android 에뮬레이터는 `http://10.0.2.2:8000`, iOS 시뮬레이터/웹은 `http://localhost:8000`
 
 ### 3. 백엔드 + DB 실행 (Docker)
 
@@ -122,6 +141,12 @@ docker-compose up -d
 
 pgAdmin 로그인: `admin@closy.dev` / `admin1234`
 
+백엔드가 정상 동작하면 브라우저에서 `http://localhost:8000` 접속 시 아래 응답이 와야 함:
+
+```json
+{"message": "OOTD AI API is running 👗"}
+```
+
 ### 4. 프론트엔드 실행
 
 ```bash
@@ -131,6 +156,8 @@ npx expo start --clear
 ```
 
 Expo Go 앱으로 QR 코드 스캔하면 바로 실행.
+
+> **주의:** 폰과 컴퓨터가 **같은 Wi-Fi**에 연결되어 있어야 함
 
 ---
 

@@ -1,7 +1,6 @@
 // HTTP 클라이언트 — 모든 API 요청의 기반
-// 실기기(Expo Go): 컴퓨터의 로컬 IP 주소로 변경 필요
-// ipconfig 실행 후 Wi-Fi IPv4 주소 확인 (예: 192.168.0.10)
-export const BASE_URL = 'http://172.31.99.158:8000'; // ← 본인 IP로 변경!
+// URL은 frontend/.env의 EXPO_PUBLIC_API_URL에서 관리
+export const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:8000';
 
 type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
