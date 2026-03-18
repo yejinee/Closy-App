@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   FlatList,
@@ -6,6 +6,7 @@ import {
   Text,
   StyleSheet,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../components/common/Header';
@@ -13,6 +14,7 @@ import CategoryFilter from '../../components/wardrobe/CategoryFilter';
 import WardrobeCard from '../../components/wardrobe/WardrobeCard';
 import AddItemModal from '../../components/wardrobe/AddItemModal';
 import useWardrobeStore from '../../store/wardrobeStore';
+import useAuthStore from '../../store/authStore';
 import { WardrobeItem } from '../../types';
 import colors from '../../styles/colors';
 
@@ -24,9 +26,15 @@ const CARD_WIDTH = (width - PADDING * 2 - CARD_GAP) / 2; // 2열 그리드
 
 // 옷장 화면 (메인 화면)
 export default function WardrobeScreen() {
-  const { items, selectedCategory, setCategory } = useWardrobeStore();
+  const { items, selectedCategory, setCategory, fetchItems, isLoading } = useWardrobeStore();
+  const token = useAuthStore((s) => s.token);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // 화면 진입 시 옷장 목록 불러오기
+  useEffect(() => {
+    if (token) fetchItems(token);
+  }, [token]);
 
   // 카테고리 필터 적용
   const filteredItems =
@@ -49,6 +57,15 @@ export default function WardrobeScreen() {
 
       {/* 카테고리 필터 */}
       <CategoryFilter selected={selectedCategory} onSelect={setCategory} />
+
+      {/* 로딩 스피너 */}
+      {isLoading && (
+        <ActivityIndicator
+          size="small"
+          color={colors.accent}
+          style={{ marginVertical: 8 }}
+        />
+      )}
 
       {/* 옷장 그리드 */}
       <FlatList

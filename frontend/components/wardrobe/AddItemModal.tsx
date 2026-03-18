@@ -8,10 +8,12 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import useWardrobeStore from '../../store/wardrobeStore';
-import { Category, WardrobeItem } from '../../types';
+import useAuthStore from '../../store/authStore';
+import { Category } from '../../types';
 import colors from '../../styles/colors';
 import common from '../../styles/common';
 
@@ -27,7 +29,8 @@ interface AddItemModalProps {
 }
 
 export default function AddItemModal({ visible, onClose }: AddItemModalProps) {
-  const addItem = useWardrobeStore((s) => s.addItem);
+  const createItem = useWardrobeStore((s) => s.createItem);
+  const token = useAuthStore((s) => s.token);
 
   // 폼 상태
   const [name, setName] = useState('');
@@ -35,6 +38,7 @@ export default function AddItemModal({ visible, onClose }: AddItemModalProps) {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [tagInput, setTagInput] = useState('');
   const [tags, setTags] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   // 이미지 선택 — 갤러리에서 가져오기
   const pickImage = async () => {
@@ -61,31 +65,37 @@ export default function AddItemModal({ visible, onClose }: AddItemModalProps) {
     setTagInput('');
   };
 
-  // 저장
-  const handleSave = () => {
-    if (!name.trim()) {
-      Alert.alert('이름을 입력해줘!');
-      return;
-    }
-    const newItem: WardrobeItem = {
-      id: Date.now().toString(),
-      name: name.trim(),
-      category,
-      color: '',
-      styleTags: tags,
-      season: [],
-      imageUri,
-      wearCount: 0,
-      createdAt: new Date().toISOString(),
-    };
-    addItem(newItem);
-    // 폼 초기화 후 닫기
+  const resetForm = () => {
     setName('');
     setCategory('상의');
     setImageUri(null);
     setTags([]);
     setTagInput('');
-    onClose();
+  };
+
+  // 저장
+  const handleSave = async () => {
+    if (!name.trim()) {
+      Alert.alert('이름을 입력해줘!');
+      return;
+    }
+    if (!token) return;
+
+    setIsSaving(true);
+    try {
+      await createItem(token, {
+        name: name.trim(),
+        category,
+        style_tags: tags,
+        image_url: imageUri,
+      });
+      resetForm();
+      onClose();
+    } catch (e: any) {
+      Alert.alert('저장 실패', e.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -179,8 +189,16 @@ export default function AddItemModal({ visible, onClose }: AddItemModalProps) {
         </ScrollView>
 
         {/* 저장 버튼 */}
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.85}>
-          <Text style={styles.saveBtnText}>SAVE</Text>
+        <TouchableOpacity
+          style={[styles.saveBtn, isSaving && { opacity: 0.6 }]}
+          onPress={handleSave}
+          disabled={isSaving}
+          activeOpacity={0.85}
+        >
+          {isSaving
+            ? <ActivityIndicator size="small" color={colors.black} />
+            : <Text style={styles.saveBtnText}>SAVE</Text>
+          }
         </TouchableOpacity>
       </View>
     </Modal>

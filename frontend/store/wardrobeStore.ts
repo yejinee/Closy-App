@@ -1,33 +1,47 @@
 import { create } from 'zustand';
 import { WardrobeItem, Category } from '../types';
+import { wardrobeApi, CreateItemParams } from '../api/wardrobe';
 
-// 옷장 상태 타입
 interface WardrobeState {
-  items: WardrobeItem[];           // 전체 아이템 목록
-  selectedCategory: Category;     // 현재 선택된 카테고리 필터
+  items: WardrobeItem[];
+  selectedCategory: Category;
+  isLoading: boolean;
+
   setCategory: (category: Category) => void;
-  addItem: (item: WardrobeItem) => void;
-  removeItem: (id: string) => void;
+  fetchItems: (token: string) => Promise<void>;
+  createItem: (token: string, params: CreateItemParams) => Promise<void>;
+  deleteItem: (token: string, id: string) => Promise<void>;
+  // 로컬 전용 (착용 횟수 — 추후 API 연동 가능)
   incrementWearCount: (id: string) => void;
 }
 
-const useWardrobeStore = create<WardrobeState>((set) => ({
-  // 초기값: 빈 배열, 전체 카테고리 선택
+const useWardrobeStore = create<WardrobeState>((set, get) => ({
   items: [],
   selectedCategory: '전체',
+  isLoading: false,
 
-  // 카테고리 필터 변경
   setCategory: (category) => set({ selectedCategory: category }),
 
-  // 아이템 추가
-  addItem: (item) =>
-    set((state) => ({ items: [item, ...state.items] })),
+  fetchItems: async (token) => {
+    set({ isLoading: true });
+    try {
+      const items = await wardrobeApi.list(token);
+      set({ items, isLoading: false });
+    } catch {
+      set({ isLoading: false });
+    }
+  },
 
-  // 아이템 삭제
-  removeItem: (id) =>
-    set((state) => ({ items: state.items.filter((i) => i.id !== id) })),
+  createItem: async (token, params) => {
+    const item = await wardrobeApi.create(token, params);
+    set((state) => ({ items: [item, ...state.items] }));
+  },
 
-  // 착용 횟수 증가
+  deleteItem: async (token, id) => {
+    await wardrobeApi.delete(token, id);
+    set((state) => ({ items: state.items.filter((i) => i.id !== id) }));
+  },
+
   incrementWearCount: (id) =>
     set((state) => ({
       items: state.items.map((i) =>

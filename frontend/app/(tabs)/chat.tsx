@@ -5,20 +5,36 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Header from '../../components/common/Header';
 import MessageBubble from '../../components/chat/MessageBubble';
 import ChatInput from '../../components/chat/ChatInput';
 import useChatStore from '../../store/chatStore';
+import useAuthStore from '../../store/authStore';
+import { chatApi } from '../../api/chat';
 import { ChatMessage } from '../../types';
 import colors from '../../styles/colors';
 
-// 채팅 화면
-// - 유저가 상황을 입력하면 AI(백엔드 연동 전 임시 응답)가 코디 추천
+// 채팅 화면 — FastAPI + Gemini 연동
 export default function ChatScreen() {
-  const { messages, isLoading, addMessage, setLoading } = useChatStore();
+  const { messages, isLoading, addMessage, setLoading, clearMessages } = useChatStore();
+  const token = useAuthStore((s) => s.token);
   const listRef = useRef<FlatList>(null);
+
+  // 화면 진입 시 채팅 히스토리 불러오기
+  useEffect(() => {
+    if (!token) return;
+    chatApi.history(token).then((history) => {
+      if (history.length > 0) {
+        clearMessages();
+        history.forEach(addMessage);
+      }
+    }).catch(() => {
+      // 히스토리 로드 실패 시 웰컴 메시지 유지
+    });
+  }, [token]);
 
   // 새 메시지가 오면 리스트 맨 아래로 스크롤
   useEffect(() => {
@@ -30,8 +46,10 @@ export default function ChatScreen() {
   }, [messages.length]);
 
   // 메시지 전송 처리
-  const handleSend = async (text: string) => {
-    // 1. 유저 메시지 추가
+  const handleSend = async (text: string, imageUrl?: string) => {
+    if (!token) return;
+
+    // 1. 유저 메시지를 즉시 화면에 추가
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -41,18 +59,15 @@ export default function ChatScreen() {
     addMessage(userMsg);
     setLoading(true);
 
-    // 2. 임시 AI 응답 (백엔드 연동 전 mock)
-    // 실제 연동 시 여기서 FastAPI 호출
-    setTimeout(() => {
-      const aiMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: '백엔드 연동 후 실제 코디 추천이 여기에 표시될 거야!\n지금은 테스트 모드야 😊',
-        createdAt: new Date().toISOString(),
-      };
+    try {
+      // 2. FastAPI → Gemini 호출
+      const aiMsg = await chatApi.send(token, text, imageUrl ?? null);
       addMessage(aiMsg);
+    } catch (e: any) {
+      Alert.alert('오류', e.message);
+    } finally {
       setLoading(false);
-    }, 1200);
+    }
   };
 
   // 이미지 전송 처리 (추구미 이미지)
@@ -65,7 +80,7 @@ export default function ChatScreen() {
       createdAt: new Date().toISOString(),
     };
     addMessage(userMsg);
-    handleSend('이미지 기반 코디 추천');
+    handleSend('이미지 기반 코디 추천', uri);
   };
 
   return (
