@@ -1,12 +1,15 @@
+/**
+ * CategoryFilter
+ * 옷장 메인 화면 상단의 카테고리 필터 탭 (전체 포함)
+ * - selected: 현재 선택된 카테고리
+ * - onSelect: 카테고리 선택 시 콜백
+ */
 import React from 'react';
-import { ScrollView, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { ScrollView, TouchableOpacity, Text } from 'react-native';
 import { Category } from '../../types';
-import colors from '../../styles/colors';
+import { styles } from './CategoryFilter.styles';
 
-// 카테고리 필터 탭
-// - selected: 현재 선택된 카테고리
-// - onSelect: 카테고리 선택 시 콜백
-
+/** 옷장 필터용 카테고리 목록 ('전체' 포함) */
 const CATEGORIES: Category[] = ['전체', '상의', '하의', '아우터', '신발', '기타'];
 
 interface CategoryFilterProps {
@@ -40,36 +43,3 @@ export default function CategoryFilter({ selected, onSelect }: CategoryFilterPro
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  scroll: {
-    flexGrow: 0, // 세로 공간을 과하게 차지하지 않도록
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    gap: 8, // 탭 간격
-  },
-  tab: {
-    paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 3,
-    borderWidth: 1,
-    borderColor: colors.surface,
-  },
-  // 선택된 탭: 네온 outline
-  tabActive: {
-    borderColor: colors.accent,
-    backgroundColor: 'transparent',
-  },
-  tabText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.sub,
-    letterSpacing: 1,
-  },
-  // 선택된 탭 텍스트: 네온 색
-  tabTextActive: {
-    color: colors.accent,
-  },
-});

@@ -1,8 +1,13 @@
+/**
+ * ChatScreen
+ * AI 채팅 화면 — FastAPI + Gemini 연동
+ * - 메시지 전송 시 옷장 컨텍스트 포함하여 AI에게 코디 추천 요청
+ * - 이미지 첨부 시 추구미(무드보드) 기반 추천 요청
+ */
 import React, { useRef, useEffect } from 'react';
 import {
   View,
   FlatList,
-  StyleSheet,
   KeyboardAvoidingView,
   Platform,
   Alert,
@@ -15,15 +20,14 @@ import useChatStore from '../../store/chatStore';
 import useAuthStore from '../../store/authStore';
 import { chatApi } from '../../api/chat';
 import { ChatMessage } from '../../types';
-import colors from '../../styles/colors';
+import { styles } from './chat.styles';
 
-// 채팅 화면 — FastAPI + Gemini 연동
 export default function ChatScreen() {
   const { messages, isLoading, addMessage, setLoading, clearMessages } = useChatStore();
   const token = useAuthStore((s) => s.token);
   const listRef = useRef<FlatList>(null);
 
-  // 화면 진입 시 채팅 히스토리 불러오기
+  /** 화면 진입 시 채팅 히스토리 불러오기 */
   useEffect(() => {
     if (!token) return;
     chatApi.history(token).then((history) => {
@@ -36,20 +40,18 @@ export default function ChatScreen() {
     });
   }, [token]);
 
-  // 새 메시지가 오면 리스트 맨 아래로 스크롤
+  /** 새 메시지 추가 시 리스트 맨 아래로 스크롤 */
   useEffect(() => {
     if (messages.length > 0) {
-      setTimeout(() => {
-        listRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
     }
   }, [messages.length]);
 
-  // 메시지 전송 처리
+  /** 텍스트/이미지 메시지 전송 */
   const handleSend = async (text: string, imageUrl?: string) => {
     if (!token) return;
 
-    // 1. 유저 메시지를 즉시 화면에 추가
+    // 유저 메시지를 즉시 화면에 추가 (Optimistic UI)
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
@@ -60,7 +62,7 @@ export default function ChatScreen() {
     setLoading(true);
 
     try {
-      // 2. FastAPI → Gemini 호출
+      // FastAPI → Gemini 호출
       const aiMsg = await chatApi.send(token, text, imageUrl ?? null);
       addMessage(aiMsg);
     } catch (e: any) {
@@ -70,7 +72,7 @@ export default function ChatScreen() {
     }
   };
 
-  // 이미지 전송 처리 (추구미 이미지)
+  /** 이미지 첨부 전송 (추구미 이미지 기반 코디 추천) */
   const handleSendImage = (uri: string) => {
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -84,13 +86,12 @@ export default function ChatScreen() {
   };
 
   return (
-    // KeyboardAvoidingView — 키보드가 올라올 때 입력창이 가려지지 않도록
+    // 키보드가 올라올 때 입력창이 가려지지 않도록
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <SafeAreaView style={styles.screen} edges={['top']}>
-        {/* 헤더 */}
         <Header title="CLOSY AI" subtitle="Style Assistant" />
 
         {/* 메시지 리스트 */}
@@ -101,7 +102,7 @@ export default function ChatScreen() {
           contentContainerStyle={styles.messageList}
           showsVerticalScrollIndicator={false}
           renderItem={({ item }) => <MessageBubble message={item} />}
-          // AI 로딩 중 표시 (하단에 점 3개)
+          // AI 응답 대기 중 — 점 3개 타이핑 표시
           ListFooterComponent={
             isLoading ? (
               <View style={styles.loadingBubble}>
@@ -113,7 +114,6 @@ export default function ChatScreen() {
           }
         />
 
-        {/* 입력창 */}
         <ChatInput
           onSend={handleSend}
           onSendImage={handleSendImage}
@@ -123,36 +123,3 @@ export default function ChatScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  screen: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  messageList: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  // AI 타이핑 표시 — 점 3개 애니메이션 (정적 표시)
-  loadingBubble: {
-    flexDirection: 'row',
-    alignSelf: 'flex-start',
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 6,
-    marginTop: 6,
-  },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: colors.accent,
-  },
-});

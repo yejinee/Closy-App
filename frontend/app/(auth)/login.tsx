@@ -1,10 +1,14 @@
+/**
+ * LoginScreen
+ * 로그인 화면 — 이메일/비밀번호 입력 후 JWT 발급
+ * 성공 시 /(tabs)/wardrobe 화면으로 이동
+ */
 import React, { useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -13,6 +17,7 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import useAuthStore from '../../store/authStore';
 import colors from '../../styles/colors';
+import { styles } from './login.styles';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -38,13 +43,13 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <SafeAreaView style={styles.screen}>
-        {/* 로고 */}
+        {/* 로고 영역 */}
         <View style={styles.logoArea}>
           <Text style={styles.logo}>CLOSY</Text>
           <Text style={styles.logoSub}>AI 스타일리스트</Text>
         </View>
 
-        {/* 폼 */}
+        {/* 입력 폼 */}
         <View style={styles.form}>
           <TextInput
             style={styles.input}
@@ -90,68 +95,3 @@ export default function LoginScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.bg },
-  screen: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    paddingHorizontal: 24,
-    justifyContent: 'center',
-  },
-  logoArea: {
-    alignItems: 'center',
-    marginBottom: 52,
-  },
-  logo: {
-    fontSize: 40,
-    fontWeight: '900',
-    color: colors.white,
-    letterSpacing: 8,
-  },
-  logoSub: {
-    fontSize: 13,
-    color: colors.sub,
-    letterSpacing: 2,
-    marginTop: 6,
-  },
-  form: {
-    gap: 12,
-  },
-  input: {
-    backgroundColor: colors.surfaceLight,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: colors.black,
-  },
-  btn: {
-    backgroundColor: colors.accent,
-    paddingVertical: 16,
-    borderRadius: 4,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  btnDisabled: {
-    opacity: 0.6,
-  },
-  btnText: {
-    color: colors.black,
-    fontSize: 15,
-    fontWeight: '900',
-    letterSpacing: 4,
-  },
-  signupLink: {
-    alignItems: 'center',
-    marginTop: 28,
-  },
-  signupText: {
-    fontSize: 13,
-    color: colors.sub,
-  },
-  signupAccent: {
-    color: colors.accent,
-    fontWeight: '700',
-  },
-});

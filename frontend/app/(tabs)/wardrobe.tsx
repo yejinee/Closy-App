@@ -1,61 +1,58 @@
+/**
+ * WardrobeScreen
+ * 옷장 메인 화면 — 2열 그리드로 아이템 목록 표시
+ * - 카테고리 필터로 아이템 분류
+ * - FAB(+) 탭 시 wardrobe-add 화면으로 이동
+ * - 카드 탭 시 선택/해제 토글 (네온 border)
+ */
 import React, { useState, useEffect } from 'react';
 import {
   View,
   FlatList,
   TouchableOpacity,
   Text,
-  StyleSheet,
-  Dimensions,
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import Header from '../../components/common/Header';
 import CategoryFilter from '../../components/wardrobe/CategoryFilter';
 import WardrobeCard from '../../components/wardrobe/WardrobeCard';
-import AddItemModal from '../../components/wardrobe/AddItemModal';
 import useWardrobeStore from '../../store/wardrobeStore';
 import useAuthStore from '../../store/authStore';
 import { WardrobeItem } from '../../types';
 import colors from '../../styles/colors';
+import { styles, CARD_WIDTH, CARD_GAP } from './wardrobe.styles';
 
-// 화면 너비를 기준으로 카드 크기 계산
-const { width } = Dimensions.get('window');
-const CARD_GAP = 10;
-const PADDING = 20;
-const CARD_WIDTH = (width - PADDING * 2 - CARD_GAP) / 2; // 2열 그리드
-
-// 옷장 화면 (메인 화면)
 export default function WardrobeScreen() {
   const { items, selectedCategory, setCategory, fetchItems, isLoading } = useWardrobeStore();
   const token = useAuthStore((s) => s.token);
-  const [modalVisible, setModalVisible] = useState(false);
+
+  /** 현재 선택된 카드 ID (네온 border 표시용) */
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // 화면 진입 시 옷장 목록 불러오기
+  /** 화면 진입 시 옷장 목록 불러오기 */
   useEffect(() => {
     if (token) fetchItems(token);
   }, [token]);
 
-  // 카테고리 필터 적용
+  /** 카테고리 필터 적용 */
   const filteredItems =
     selectedCategory === '전체'
       ? items
       : items.filter((item) => item.category === selectedCategory);
 
-  // 카드 탭 — 선택/해제 토글
+  /** 카드 탭 — 선택/해제 토글 */
   const handleCardPress = (item: WardrobeItem) => {
     setSelectedId((prev) => (prev === item.id ? null : item.id));
   };
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
-      {/* 헤더 */}
-      <Header
-        title="CLOSY"
-        subtitle={`${items.length} ITEMS`}
-      />
+      {/* 헤더 — 아이템 수 서브타이틀 */}
+      <Header title="CLOSY" subtitle={`${items.length} ITEMS`} />
 
-      {/* 카테고리 필터 */}
+      {/* 카테고리 필터 탭 */}
       <CategoryFilter selected={selectedCategory} onSelect={setCategory} />
 
       {/* 로딩 스피너 */}
@@ -67,16 +64,16 @@ export default function WardrobeScreen() {
         />
       )}
 
-      {/* 옷장 그리드 */}
+      {/* 옷장 2열 그리드 */}
       <FlatList
         data={filteredItems}
         keyExtractor={(item) => item.id}
-        numColumns={2}                    // 2열 그리드
+        numColumns={2}
         columnWrapperStyle={styles.row}
         contentContainerStyle={styles.grid}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          // 아이템 없을 때 빈 상태 표시
+          // 아이템 없을 때 빈 상태 안내
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyTitle}>옷장이 비어있어</Text>
             <Text style={styles.emptySubtitle}>
@@ -95,77 +92,14 @@ export default function WardrobeScreen() {
         )}
       />
 
-      {/* FAB — 아이템 추가 버튼 (네온 그린) */}
+      {/* FAB — 아이템 추가 (우하단 고정) */}
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => setModalVisible(true)}
+        onPress={() => router.push('/wardrobe-add')}
         activeOpacity={0.85}
       >
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
-
-      {/* 아이템 추가 모달 */}
-      <AddItemModal
-        visible={modalVisible}
-        onClose={() => setModalVisible(false)}
-      />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  grid: {
-    paddingHorizontal: PADDING,
-    paddingBottom: 100, // FAB와 탭바가 가리지 않도록
-  },
-  row: {
-    gap: CARD_GAP,
-    marginBottom: CARD_GAP,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 80,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.white,
-    letterSpacing: 1,
-    marginBottom: 10,
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    color: colors.sub,
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  // FAB 스타일 — 우하단 고정
-  fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  fabIcon: {
-    fontSize: 28,
-    color: colors.black,
-    fontWeight: '300',
-    lineHeight: 32,
-  },
-});

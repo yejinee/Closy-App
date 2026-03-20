@@ -11,6 +11,8 @@ interface WardrobeState {
   fetchItems: (token: string) => Promise<void>;
   createItem: (token: string, params: CreateItemParams) => Promise<void>;
   deleteItem: (token: string, id: string) => Promise<void>;
+  // 로컬 즉시 추가 (백엔드 연동 전 또는 옵티미스틱 업데이트)
+  addItemLocally: (item: WardrobeItem) => void;
   // 로컬 전용 (착용 횟수 — 추후 API 연동 가능)
   incrementWearCount: (id: string) => void;
 }
@@ -41,6 +43,9 @@ const useWardrobeStore = create<WardrobeState>((set, get) => ({
     await wardrobeApi.delete(token, id);
     set((state) => ({ items: state.items.filter((i) => i.id !== id) }));
   },
+
+  addItemLocally: (item) =>
+    set((state) => ({ items: [item, ...state.items] })),
 
   incrementWearCount: (id) =>
     set((state) => ({

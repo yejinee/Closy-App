@@ -1,10 +1,14 @@
+/**
+ * SignupScreen
+ * 회원가입 화면 — 이메일/비밀번호 입력 후 계정 생성
+ * 성공 시 /(tabs)/wardrobe 화면으로 이동
+ */
 import React, { useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -13,6 +17,7 @@ import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import useAuthStore from '../../store/authStore';
 import colors from '../../styles/colors';
+import { styles } from './signup.styles';
 
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
@@ -43,17 +48,18 @@ export default function SignupScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <SafeAreaView style={styles.screen}>
-        {/* 헤더 */}
+        {/* 뒤로 버튼 */}
         <TouchableOpacity style={styles.back} onPress={() => router.back()}>
           <Text style={styles.backText}>← 뒤로</Text>
         </TouchableOpacity>
 
+        {/* 타이틀 */}
         <View style={styles.titleArea}>
           <Text style={styles.title}>JOIN CLOSY</Text>
           <Text style={styles.subtitle}>나만의 AI 스타일리스트</Text>
         </View>
 
-        {/* 폼 */}
+        {/* 입력 폼 */}
         <View style={styles.form}>
           <TextInput
             style={styles.input}
@@ -96,62 +102,3 @@ export default function SignupScreen() {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: colors.bg },
-  screen: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    paddingHorizontal: 24,
-    paddingTop: 16,
-  },
-  back: {
-    marginBottom: 32,
-  },
-  backText: {
-    color: colors.sub,
-    fontSize: 14,
-  },
-  titleArea: {
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: colors.white,
-    letterSpacing: 6,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: colors.sub,
-    marginTop: 6,
-    letterSpacing: 1,
-  },
-  form: {
-    gap: 12,
-  },
-  input: {
-    backgroundColor: colors.surfaceLight,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: colors.black,
-  },
-  btn: {
-    backgroundColor: colors.accent,
-    paddingVertical: 16,
-    borderRadius: 4,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  btnDisabled: {
-    opacity: 0.6,
-  },
-  btnText: {
-    color: colors.black,
-    fontSize: 15,
-    fontWeight: '900',
-    letterSpacing: 4,
-  },
-});

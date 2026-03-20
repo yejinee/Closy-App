@@ -1,7 +1,15 @@
+"""
+OOTD AI API — 메인 앱 설정
+
+- CORS, 라우터 등록, static 파일 서빙
+- /static 경로로 업로드된 이미지 파일 접근 가능
+"""
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.config import settings
-from app.routers import auth, wardrobe, chat
+from app.routers import auth, wardrobe, chat, vision
 
 app = FastAPI(
     title="OOTD AI API",
@@ -17,9 +25,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# ─── 라우터 등록 ──────────────────────────────────────────────────────────────
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 app.include_router(wardrobe.router, prefix="/wardrobe", tags=["wardrobe"])
 app.include_router(chat.router, prefix="/chat", tags=["chat"])
+app.include_router(vision.router, prefix="/vision", tags=["vision"])
+
+# ─── 정적 파일 서빙 (업로드된 이미지 접근용) ──────────────────────────────────
+STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+os.makedirs(STATIC_DIR, exist_ok=True)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 @app.get("/")

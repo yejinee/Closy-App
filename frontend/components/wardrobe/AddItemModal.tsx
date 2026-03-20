@@ -1,3 +1,11 @@
+/**
+ * AddItemModal
+ * 간단 아이템 추가 모달 (레거시 — wardrobe 탭에서 사용)
+ * 신규 등록은 wardrobe-add 화면(CropModal 포함)을 사용합니다.
+ *
+ * - visible: 모달 표시 여부
+ * - onClose: 닫기 콜백
+ */
 import React, { useState } from 'react';
 import {
   Modal,
@@ -6,9 +14,9 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  StyleSheet,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import useWardrobeStore from '../../store/wardrobeStore';
@@ -16,11 +24,9 @@ import useAuthStore from '../../store/authStore';
 import { Category } from '../../types';
 import colors from '../../styles/colors';
 import common from '../../styles/common';
+import { styles } from './AddItemModal.styles';
 
-// 아이템 추가 모달
-// - visible: 모달 표시 여부
-// - onClose: 닫기 콜백
-
+/** 선택 가능한 카테고리 목록 ('전체' 제외) */
 const CATEGORIES: Exclude<Category, '전체'>[] = ['상의', '하의', '아우터', '신발', '기타'];
 
 interface AddItemModalProps {
@@ -32,7 +38,7 @@ export default function AddItemModal({ visible, onClose }: AddItemModalProps) {
   const createItem = useWardrobeStore((s) => s.createItem);
   const token = useAuthStore((s) => s.token);
 
-  // 폼 상태
+  // ─── 폼 상태 ────────────────────────────────────────────────────────────
   const [name, setName] = useState('');
   const [category, setCategory] = useState<Exclude<Category, '전체'>>('상의');
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -40,7 +46,10 @@ export default function AddItemModal({ visible, onClose }: AddItemModalProps) {
   const [tags, setTags] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
-  // 이미지 선택 — 갤러리에서 가져오기
+  /**
+   * 갤러리에서 이미지 선택
+   * quality: 0.75 압축, exif 제거로 파일 크기 최소화
+   */
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -48,15 +57,17 @@ export default function AddItemModal({ visible, onClose }: AddItemModalProps) {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
+      mediaTypes: ['images'],
+      allowsEditing: false,
+      quality: 0.75,
+      exif: false,
     });
     if (!result.canceled) {
       setImageUri(result.assets[0].uri);
     }
   };
 
-  // 태그 추가 — 엔터 또는 쉼표로 구분
+  /** 태그 입력 — 엔터 또는 추가 버튼으로 등록 */
   const addTag = () => {
     const trimmed = tagInput.trim().replace('#', '');
     if (trimmed && !tags.includes(trimmed)) {
@@ -65,6 +76,7 @@ export default function AddItemModal({ visible, onClose }: AddItemModalProps) {
     setTagInput('');
   };
 
+  /** 폼 초기화 */
   const resetForm = () => {
     setName('');
     setCategory('상의');
@@ -73,7 +85,7 @@ export default function AddItemModal({ visible, onClose }: AddItemModalProps) {
     setTagInput('');
   };
 
-  // 저장
+  /** 저장 */
   const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert('이름을 입력해줘!');
@@ -113,8 +125,12 @@ export default function AddItemModal({ visible, onClose }: AddItemModalProps) {
           {/* 이미지 업로드 */}
           <TouchableOpacity style={styles.imageArea} onPress={pickImage} activeOpacity={0.8}>
             {imageUri ? (
-              // 선택된 이미지 미리보기 표시 텍스트 (Image 컴포넌트는 아래에서 처리)
-              <Text style={styles.imageDoneText}>✓ 이미지 선택됨</Text>
+              <>
+                <Image source={{ uri: imageUri }} style={styles.imagePreview} resizeMode="cover" />
+                <View style={styles.imageChangeOverlay}>
+                  <Text style={styles.imageChangeText}>탭하여 변경</Text>
+                </View>
+              </>
             ) : (
               <View style={styles.imageUploadContent}>
                 <Text style={styles.imageIcon}>+</Text>
@@ -154,7 +170,7 @@ export default function AddItemModal({ visible, onClose }: AddItemModalProps) {
             </View>
           </View>
 
-          {/* 태그 */}
+          {/* 스타일 태그 */}
           <View style={styles.section}>
             <Text style={styles.label}>스타일 태그</Text>
             <View style={common.row}>
@@ -171,7 +187,7 @@ export default function AddItemModal({ visible, onClose }: AddItemModalProps) {
                 <Text style={styles.tagAddText}>추가</Text>
               </TouchableOpacity>
             </View>
-            {/* 태그 리스트 */}
+            {/* 태그 칩 목록 */}
             {tags.length > 0 && (
               <View style={styles.tagList}>
                 {tags.map((tag) => (
@@ -204,151 +220,3 @@ export default function AddItemModal({ visible, onClose }: AddItemModalProps) {
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 32,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 28,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '900',
-    letterSpacing: 4,
-    color: colors.white,
-  },
-  closeBtn: {
-    fontSize: 20,
-    color: colors.sub,
-    fontWeight: '700',
-  },
-  imageArea: {
-    height: 180,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: colors.surface,
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 28,
-  },
-  imageUploadContent: {
-    alignItems: 'center',
-  },
-  imageIcon: {
-    fontSize: 36,
-    color: colors.accent,
-    fontWeight: '300',
-  },
-  imageLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.white,
-    marginTop: 8,
-    letterSpacing: 1,
-  },
-  imageHint: {
-    fontSize: 11,
-    color: colors.sub,
-    marginTop: 4,
-  },
-  imageDoneText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.accent,
-    letterSpacing: 1,
-  },
-  section: {
-    marginBottom: 24,
-  },
-  label: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: colors.sub,
-    letterSpacing: 2,
-    textTransform: 'uppercase',
-    marginBottom: 10,
-  },
-  input: {
-    backgroundColor: colors.surfaceLight,
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 14,
-    color: colors.black,
-  },
-  categoryRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  catChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 3,
-    borderWidth: 1,
-    borderColor: colors.surface,
-  },
-  catChipActive: {
-    borderColor: colors.accent,
-  },
-  catChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.sub,
-  },
-  catChipTextActive: {
-    color: colors.accent,
-  },
-  tagAddBtn: {
-    backgroundColor: colors.surface,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  tagAddText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.white,
-  },
-  tagList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 10,
-  },
-  tagChip: {
-    borderWidth: 1,
-    borderColor: colors.accent,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 3,
-  },
-  tagChipText: {
-    fontSize: 11,
-    color: colors.accent,
-    fontWeight: '700',
-  },
-  saveBtn: {
-    backgroundColor: colors.accent,
-    paddingVertical: 16,
-    borderRadius: 4,
-    alignItems: 'center',
-    marginTop: 16,
-  },
-  saveBtnText: {
-    color: colors.black,
-    fontSize: 15,
-    fontWeight: '900',
-    letterSpacing: 4,
-  },
-});
